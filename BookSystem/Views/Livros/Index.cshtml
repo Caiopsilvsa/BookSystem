@@ -9,45 +9,34 @@
 <p>
     <a asp-action="Create">Adicionar Livro</a>
 </p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Titulo)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Preco)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Autor)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Categoria)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Titulo)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Preco)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Autor.Nome)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Categoria.Nome)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ID">Editar</a> |
+
+         
+                @*<a asp-action="Edit" asp-route-id="@item.ID">Editar</a> |
                 <a asp-action="Details" asp-route-id="@item.ID">Detalhes</a> |
-                <a asp-action="Delete" asp-route-id="@item.ID">Excluir</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+                <a asp-action="Delete" asp-route-id="@item.ID">Excluir</a>*@
+           
+   
+<div class="album py-5 bg-body-tertiary">
+    <div class="container">
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            
+                @foreach (var livro in Model)
+                {
+                <div class="col">
+                      <div class="card shadow-sm">
+                    <svg class="bd-placeholder-img card-img-top" width="100%" height="225" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#55595c" /><text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text></svg>
+                    <div class="card-body">
+                            <p class="card-text">@Html.DisplayFor(modelItem => livro.Titulo)</p>
+                            <p class="card-text">Preço: @Html.DisplayFor(modelItem => livro.Preco)</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                <a type="button" class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@livro.ID">Ver</a>
+                                <a type="button" class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id ="@livro.ID">Editar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                }
+           

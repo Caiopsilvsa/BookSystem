@@ -8,35 +8,43 @@ using Microsoft.EntityFrameworkCore;
 using BookSystem.Data;
 using BookSystem.Models;
 using BookSystem.ViewModels;
+using BookSystem.Interfaces;
 
 namespace BookSystem.Controllers
 {
     public class LivrosController : Controller
     {
-        private readonly BookSystemContext _context;
+        private readonly ILivroRepository _livroRepostory;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IAutorRepository _autorRepository;
+        private readonly ICategoriaRepository _categoriaRepository;
 
-        public LivrosController(BookSystemContext context)
+        public LivrosController
+            (
+            ILivroRepository livroRepostory ,IUnitOfWork unitOfWork,
+            IAutorRepository autorRepository, ICategoriaRepository categoriaRepository
+            )
         {
-            _context = context;
+            _livroRepostory = livroRepostory;
+            _unitOfWork = unitOfWork;
+            _autorRepository = autorRepository;
+            _categoriaRepository = categoriaRepository;
         }
 
         public async Task<IActionResult> Index()
         {
-            var bookSystemContext = _context.Livro.Include(l => l.Autor).Include(l => l.Categoria);
-            return View(await bookSystemContext.ToListAsync());
+            return View(await _livroRepostory.GetAllAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Livro == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var livro = await _context.Livro
-                .Include(l => l.Autor)
-                .Include(l => l.Categoria)
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var livro = await _livroRepostory.GetByIdAsync(id);
+            
             if (livro == null)
             {
                 return NotFound();
@@ -47,16 +55,10 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Create()
         {
-            IQueryable<string> autores = from a in _context.Autor
-                        select a.Nome;
-
-            IQueryable<string> categorias = from g in _context.Categoria
-                                            select g.Nome;
-
             CreateLivroViewModel createLivroViewModel = new CreateLivroViewModel()
             {
-                Autores = new SelectList(await autores.Distinct().ToListAsync()),
-                Categorias = new SelectList(await categorias.Distinct().ToListAsync()),
+                Autores = new SelectList(await _autorRepository.GetAutorByNameList()),
+                Categorias = new SelectList(await _categoriaRepository.GetCatByNameList()),
             };
 
             return View(createLivroViewModel);
@@ -69,25 +71,23 @@ namespace BookSystem.Controllers
 
             if (ModelState.IsValid)
             {
-                var findAutor = await _context.Autor.
-                    Where(a => a.Nome == createLivroViewModel.AutorEscolhido).FirstOrDefaultAsync();
-
-                var findCategoria =  await _context.Categoria.
-                    Where(c => c.Nome == createLivroViewModel.CategoriaEscolhida).FirstOrDefaultAsync();
+                var findAutor = await _autorRepository.GetByNameAsync(createLivroViewModel.AutorEscolhido);
+                var findCategoria = await _categoriaRepository.GetByNameAsync(createLivroViewModel.CategoriaEscolhida);
 
                 if (findAutor != null && findCategoria != null)
                 {
                     if (findAutor.Nome != "Sem Autor" && findCategoria.Nome != "Sem Categoria")
                     {
-                        var Livro = new Livro()
+                        var livro = new Livro()
                         {
                             Titulo = createLivroViewModel.Livro.Titulo,
                             Preco = createLivroViewModel.Livro.Preco,
+                            Quantidade = createLivroViewModel.Livro.Quantidade,
                             Autor = findAutor,
                             Categoria = findCategoria,
                         };
-                        await _context.Livro.AddAsync(Livro);
-                        await _context.SaveChangesAsync();
+                        await _livroRepostory.AddAsync(livro);
+                        await _unitOfWork.CommitAsync();
                         return RedirectToAction("Index");
                     }                  
                 }
@@ -103,26 +103,22 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Livro == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var livro = await _context.Livro.FindAsync(id);
+            var livro = await _livroRepostory.GetByIdAsync(id);
             if (livro == null)
             {
                 return NotFound();
             }
-            IQueryable<string> autores = from a in _context.Autor
-                                         select a.Nome;
-
-            IQueryable<string> categorias = from g in _context.Categoria
-                                            select g.Nome;
+      
             EditLivroViewModel editLivroViewModel = new EditLivroViewModel()
             {
                 Livro = livro,
-                Autores = new SelectList(await autores.Distinct().ToListAsync()),
-                Categorias = new SelectList(await categorias.Distinct().ToListAsync()),
+                Autores = new SelectList(await _autorRepository.GetAutorByNameList()),
+                Categorias = new SelectList(await _categoriaRepository.GetCatByNameList())
             };
             return View(editLivroViewModel);
         }
@@ -135,26 +131,24 @@ namespace BookSystem.Controllers
             {
                 try
                 {
-                    var autorEscolhido = await _context.Autor.
-                        Where(a => a.Nome == editLivroViewModel.AutorEscolhido).FirstOrDefaultAsync();
-
-                    var categoriaEscolhida = await _context.Categoria.
-                        Where(c => c.Nome == editLivroViewModel.CategoriaEscolhida).FirstOrDefaultAsync();
-
+                    var autorEscolhido = await _autorRepository.GetByNameAsync(editLivroViewModel.AutorEscolhido);
+                    var categoriaEscolhida = await _categoriaRepository.GetByNameAsync(editLivroViewModel.CategoriaEscolhida);
+                     
                     var livro = new Livro()
                     {
                         Titulo = editLivroViewModel.Livro.Titulo,
                         Preco = editLivroViewModel.Livro.Preco,
+                        Quantidade = editLivroViewModel.Livro.Quantidade,
                         Autor = autorEscolhido,
                         Categoria = categoriaEscolhida
                     };
 
-                    _context.Update(livro);
-                    await _context.SaveChangesAsync();
+                    _livroRepostory.Update(livro);
+                    await _unitOfWork.CommitAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!LivroExists(editLivroViewModel.Livro.ID))
+                    if (!_livroRepostory.bookExists(editLivroViewModel.Livro.ID))
                     {
                         return NotFound();
                     }
@@ -171,15 +165,13 @@ namespace BookSystem.Controllers
         // GET: Livros/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Livro == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var livro = await _context.Livro
-                .Include(l => l.Autor)
-                .Include(l => l.Categoria)
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var livro = await _livroRepostory.GetByIdAsync(id);
+           
             if (livro == null)
             {
                 return NotFound();
@@ -193,23 +185,14 @@ namespace BookSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Livro == null)
-            {
-                return Problem("Entity set 'BookSystemContext.Livro'  is null.");
-            }
-            var livro = await _context.Livro.FindAsync(id);
+            var livro = _livroRepostory.GetByIdAsync(id);
             if (livro != null)
             {
-                _context.Livro.Remove(livro);
+               await _livroRepostory.DeleteAsync(id);
             }
             
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CommitAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool LivroExists(int id)
-        {
-          return (_context.Livro?.Any(e => e.ID == id)).GetValueOrDefault();
         }
     }
 }

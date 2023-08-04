@@ -16,6 +16,9 @@ namespace BookSystem.Models
         [Display(Name = "Preço")]
         public int Preco { get; set; }
 
+        [Required(ErrorMessage = "Campo Obrigatório")]
+        public int Quantidade { get; set; }
+
         public virtual Autor? Autor { get; set; }
         public int? AutorID { get; set; }
         public virtual Categoria? Categoria { get; set; }

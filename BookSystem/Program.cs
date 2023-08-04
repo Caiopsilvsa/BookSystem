@@ -1,7 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using BookSystem.Data;
+using BookSystem.Interfaces;
+using BookSystem.Repositories;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<ILivroRepository, LivroRepository>();
+builder.Services.AddScoped<IAutorRepository, AutorRepository>();
+builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddDbContext<BookSystemContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("BookSystemContext") ?? throw new InvalidOperationException("Connection string 'BookSystemContext' not found.")));
 

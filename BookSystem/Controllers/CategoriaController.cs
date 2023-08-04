@@ -7,34 +7,35 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BookSystem.Data;
 using BookSystem.Models;
+using BookSystem.Interfaces;
 
 namespace BookSystem.Controllers
 {
     public class CategoriaController : Controller
     {
-        private readonly BookSystemContext _context;
+        private readonly ICategoriaRepository _categoriaRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CategoriaController(BookSystemContext context)
+        public CategoriaController(ICategoriaRepository categoriaRepository, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _categoriaRepository = categoriaRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IActionResult> Index()
         {
-              return _context.Categoria != null ? 
-                          View(await _context.Categoria.ToListAsync()) :
-                          Problem("Entity set 'BookSystemContext.Categoria'  is null.");
+            return View(await _categoriaRepository.GetAllAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Categoria == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var categoria = await _context.Categoria
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var categoria = await _categoriaRepository.GetByIdAsync(id);
+
             if (categoria == null)
             {
                 return NotFound();
@@ -54,8 +55,8 @@ namespace BookSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(categoria);
-                await _context.SaveChangesAsync();
+                _categoriaRepository.Add(categoria);
+                await _unitOfWork.CommitAsync();
                 return RedirectToAction(nameof(Index));
             }
             return View(categoria);
@@ -63,12 +64,13 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Categoria == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var categoria = await _context.Categoria.FindAsync(id);
+            var categoria = await _categoriaRepository.GetByIdAsync(id);
+            
             if (categoria == null)
             {
                 return NotFound();
@@ -89,12 +91,12 @@ namespace BookSystem.Controllers
             {
                 try
                 {
-                    _context.Update(categoria);
-                    await _context.SaveChangesAsync();
+                    _categoriaRepository.Update(categoria);
+                    await _unitOfWork.CommitAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CategoriaExists(categoria.ID))
+                    if (!_categoriaRepository.bookExists(categoria.ID))
                     {
                         return NotFound();
                     }
@@ -110,13 +112,13 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Categoria == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var categoria = await _context.Categoria
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var categoria = await _categoriaRepository.GetByIdAsync(id);
+
             if (categoria == null)
             {
                 return NotFound();
@@ -129,23 +131,14 @@ namespace BookSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Categoria == null)
-            {
-                return Problem("Entity set 'BookSystemContext.Categoria'  is null.");
-            }
-            var categoria = await _context.Categoria.FindAsync(id);
+            var categoria = await _categoriaRepository.GetByIdAsync(id);
             if (categoria != null)
             {
-                _context.Categoria.Remove(categoria);
+                _categoriaRepository.Delete(id);
             }
             
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CommitAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool CategoriaExists(int id)
-        {
-          return (_context.Categoria?.Any(e => e.ID == id)).GetValueOrDefault();
         }
     }
 }

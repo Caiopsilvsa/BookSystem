@@ -7,34 +7,35 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using BookSystem.Data;
 using BookSystem.Models;
+using BookSystem.Interfaces;
 
 namespace BookSystem.Controllers
 {
     public class AutorController : Controller
     {
-        private readonly BookSystemContext _context;
+        private readonly IAutorRepository _autorRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AutorController(BookSystemContext context)
+        public AutorController(IAutorRepository autorRepository, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _autorRepository = autorRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IActionResult> Index()
         {
-              return _context.Autor != null ? 
-                          View(await _context.Autor.ToListAsync()) :
-                          Problem("Entity set 'BookSystemContext.Autor'  is null.");
+              return View(await _autorRepository.GetAllAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Autor == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var autor = await _context.Autor
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var autor = await _autorRepository.GetByIdAsync(id);
+  
             if (autor == null)
             {
                 return NotFound();
@@ -54,8 +55,9 @@ namespace BookSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(autor);
-                await _context.SaveChangesAsync();
+                await _autorRepository.AddAsync(autor);
+               await _unitOfWork.CommitAsync();
+
                 return RedirectToAction(nameof(Index));
             }
             return View(autor);
@@ -63,12 +65,12 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Autor == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var autor = await _context.Autor.FindAsync(id);
+            var autor = await _autorRepository.GetByIdAsync(id);
             if (autor == null)
             {
                 return NotFound();
@@ -89,12 +91,12 @@ namespace BookSystem.Controllers
             {
                 try
                 {
-                    _context.Update(autor);
-                    await _context.SaveChangesAsync();
+                    _autorRepository.Update(autor);
+                    _unitOfWork.Commit();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!AutorExists(autor.ID))
+                    if (!_autorRepository.AutorExists(autor.ID))
                     {
                         return NotFound();
                     }
@@ -110,13 +112,12 @@ namespace BookSystem.Controllers
 
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Autor == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var autor = await _context.Autor
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var autor = await _autorRepository.GetByIdAsync(id);
             if (autor == null)
             {
                 return NotFound();
@@ -129,23 +130,14 @@ namespace BookSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Autor == null)
-            {
-                return Problem("Entity set 'BookSystemContext.Autor'  is null.");
-            }
-            var autor = await _context.Autor.FindAsync(id);
+            var autor = await _autorRepository.GetByIdAsync(id);
             if (autor != null)
             {
-                _context.Autor.Remove(autor);
+                _autorRepository.Delete(id);
             }
             
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CommitAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool AutorExists(int id)
-        {
-          return (_context.Autor?.Any(e => e.ID == id)).GetValueOrDefault();
         }
     }
 }
