@@ -39,6 +39,7 @@ namespace BookSystem.Repositories
             return await _context.Livro
                 .Include(a => a.Autor)
                 .Include(c => c.Categoria)
+                .OrderBy(a => a.ID)
                 .ToListAsync();
         }
 
