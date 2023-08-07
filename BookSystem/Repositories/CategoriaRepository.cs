@@ -43,7 +43,9 @@ namespace BookSystem.Repositories
 
         public async Task<Categoria> GetByIdAsync(int? id)
         {
-            return await _context.Categoria.FirstOrDefaultAsync(a => a.ID == id);
+            return await _context.Categoria
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.ID == id);
         }
 
         public async Task<Categoria> GetByNameAsync(string nome)

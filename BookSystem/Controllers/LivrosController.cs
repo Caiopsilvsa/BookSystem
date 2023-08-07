@@ -18,17 +18,20 @@ namespace BookSystem.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAutorRepository _autorRepository;
         private readonly ICategoriaRepository _categoriaRepository;
+        private readonly IPhotoService _photoService;
 
         public LivrosController
             (
             ILivroRepository livroRepostory ,IUnitOfWork unitOfWork,
-            IAutorRepository autorRepository, ICategoriaRepository categoriaRepository
+            IAutorRepository autorRepository, ICategoriaRepository categoriaRepository,
+            IPhotoService photoService
             )
         {
             _livroRepostory = livroRepostory;
             _unitOfWork = unitOfWork;
             _autorRepository = autorRepository;
             _categoriaRepository = categoriaRepository;
+            _photoService = photoService;
         }
 
         public async Task<IActionResult> Index()
@@ -68,11 +71,12 @@ namespace BookSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateLivroViewModel createLivroViewModel)
         {
-
             if (ModelState.IsValid)
             {
                 var findAutor = await _autorRepository.GetByNameAsync(createLivroViewModel.AutorEscolhido);
                 var findCategoria = await _categoriaRepository.GetByNameAsync(createLivroViewModel.CategoriaEscolhida);
+
+                var fotoResult = await _photoService.AddPhotoAsync(createLivroViewModel.Foto);
 
                 if (findAutor != null && findCategoria != null)
                 {
@@ -80,11 +84,12 @@ namespace BookSystem.Controllers
                     {
                         var livro = new Livro()
                         {
-                            Titulo = createLivroViewModel.Livro.Titulo,
-                            Preco = createLivroViewModel.Livro.Preco,
-                            Quantidade = createLivroViewModel.Livro.Quantidade,
+                            Titulo = createLivroViewModel.Titulo,
+                            Preco = createLivroViewModel.Preco,
+                            Quantidade = createLivroViewModel.Quantidade,
                             Autor = findAutor,
                             Categoria = findCategoria,
+                            Foto = fotoResult.Url.ToString()
                         };
                         await _livroRepostory.AddAsync(livro);
                         await _unitOfWork.CommitAsync();
@@ -185,12 +190,7 @@ namespace BookSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var livro = _livroRepostory.GetByIdAsync(id);
-            if (livro != null)
-            {
-               await _livroRepostory.DeleteAsync(id);
-            }
-            
+            await _livroRepostory.DeleteAsync(id);
             await _unitOfWork.CommitAsync();
             return RedirectToAction(nameof(Index));
         }

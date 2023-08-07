@@ -52,7 +52,9 @@ namespace BookSystem.Repositories
 
         public async Task<Autor> GetByIdAsync(int? id)
         {       
-            return await _context.Autor.FirstOrDefaultAsync(a => a.ID == id);
+            return await _context.Autor
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.ID == id);
         }
 
         public async Task<Autor> GetByNameAsync(string nome)

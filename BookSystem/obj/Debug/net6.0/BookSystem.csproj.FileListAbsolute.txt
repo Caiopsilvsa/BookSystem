@@ -260,3 +260,4 @@ C:\Users\Caio\OneDrive\Documentos\Estudos\.NET\BookSystem\BookSystem\BookSystem\
 C:\Users\Caio\OneDrive\Documentos\Estudos\.NET\BookSystem\BookSystem\BookSystem\obj\Debug\net6.0\BookSystem.pdb
 C:\Users\Caio\OneDrive\Documentos\Estudos\.NET\BookSystem\BookSystem\BookSystem\obj\Debug\net6.0\BookSystem.genruntimeconfig.cache
 C:\Users\Caio\OneDrive\Documentos\Estudos\.NET\BookSystem\BookSystem\BookSystem\obj\Debug\net6.0\ref\BookSystem.dll
+C:\Users\Caio\OneDrive\Documentos\Estudos\.NET\BookSystem\BookSystem\BookSystem\bin\Debug\net6.0\CloudinaryDotNet.dll

@@ -3,10 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using BookSystem.Data;
 using BookSystem.Interfaces;
 using BookSystem.Repositories;
-
+using BookSystem.Helpers;
+using BookSystem.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddScoped<ILivroRepository, LivroRepository>();
 builder.Services.AddScoped<IAutorRepository, AutorRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();

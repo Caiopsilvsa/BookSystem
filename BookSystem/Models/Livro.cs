@@ -18,6 +18,7 @@ namespace BookSystem.Models
 
         [Required(ErrorMessage = "Campo Obrigatório")]
         public int Quantidade { get; set; }
+        public string? Foto { get; set; }
 
         public virtual Autor? Autor { get; set; }
         public int? AutorID { get; set; }
